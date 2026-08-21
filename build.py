@@ -735,6 +735,60 @@ libshitty = library(
 )
 
 
+libshitty_vt_sources = [
+    "$(S)/lib/shitty/ansi_palette.cpp",
+    "$(S)/lib/shitty/base64.cpp",
+    "$(S)/lib/shitty/brand.cpp",
+    "$(S)/lib/shitty/cell_extra_store.cpp",
+    "$(S)/lib/shitty/color.cpp",
+    "$(S)/lib/shitty/color_names.cpp",
+    "$(S)/lib/shitty/color_spec.cpp",
+    "$(S)/lib/shitty/composer_geometry.cpp",
+    "$(S)/lib/shitty/composer_headless.cpp",
+    "$(S)/lib/shitty/darts.cpp",
+    "$(S)/lib/shitty/fatal.cpp",
+    "$(S)/lib/shitty/grapheme.cpp",
+    "$(S)/lib/shitty/hex.cpp",
+    "$(S)/lib/shitty/input_handler.cpp",
+    "$(S)/lib/shitty/keyboard.cpp",
+    "$(S)/lib/shitty/listener.cpp",
+    "$(S)/lib/shitty/mouse_frontend.cpp",
+    "$(S)/lib/shitty/mouse_protocol.cpp",
+    "$(S)/lib/shitty/options_policy.cpp",
+    {"src": parser_source, "inputs": ["$(B)/parser.rl.h"]},
+    "$(S)/lib/shitty/point.cpp",
+    "$(S)/lib/shitty/rect.cpp",
+    "$(S)/lib/shitty/render_synthesis.cpp",
+    "$(S)/lib/shitty/screen.cpp",
+    "$(S)/lib/shitty/term_features.cpp",
+    "$(S)/lib/shitty/terminal_types.cpp",
+    {"src": unicode_source, "inputs": ["$(B)/unicode_data.h"]},
+    "$(S)/lib/shitty/unicode_map.cpp",
+    "$(S)/lib/shitty/unicode_width.cpp",
+    "$(S)/lib/shitty/utf8.cpp",
+    {"src": vterm_source, "inputs": ["$(B)/utf8_dfa.h"]},
+    "$(S)/lib/shitty/vterm_c.cpp",
+    "$(S)/lib/shitty/vterm_headless.cpp",
+    "$(S)/lib/shitty/vterm_trace.cpp",
+]
+
+libshitty_vt = library(
+    name="libshitty_vt",
+    srcs=libshitty_vt_sources,
+    cxxflags=production_path_flags,
+    deps=[plt, threads, libstd],
+    output="$(B)/libshitty_vt.a",
+)
+
+
+vterm_c_smoke = program(
+    name="vterm_c_smoke",
+    output="$(B)/vterm_c_smoke",
+    srcs=["$(S)/tst/vterm_c_smoke.c"],
+    deps=[libshitty_vt],
+)
+
+
 st = program(
     srcs=[{
         "src": shitty_main_source,
@@ -3636,6 +3690,35 @@ for group_index in range(keyboard_product_group_count):
 
 
 group("install", st, pt)
+group("vterm-c", vterm_c_smoke)
+
+vterm_c_sdk = command(
+    inputs=["$(S)/lib/shitty/vterm_c.h"],
+    outputs=[
+        "$(B)/vterm-c/lib/libshitty_vt.a",
+        "$(B)/vterm-c/lib/libplt.a",
+        "$(B)/vterm-c/lib/libstd.a",
+        "$(B)/vterm-c/include/vterm_c.h",
+    ],
+    deps=[libshitty_vt, plt, libstd],
+    cmd=[
+        "python3",
+        "-c",
+        (
+            "from pathlib import Path; import shutil; "
+            "pairs=["
+            "(r'$(B)/libshitty_vt.a',r'$(B)/vterm-c/lib/libshitty_vt.a'),"
+            "(r'$(B)/ext/plt/libplt.a',r'$(B)/vterm-c/lib/libplt.a'),"
+            "(r'$(B)/ext/libstd/libstd.a',r'$(B)/vterm-c/lib/libstd.a'),"
+            "(r'$(S)/lib/shitty/vterm_c.h',r'$(B)/vterm-c/include/vterm_c.h')]; "
+            "[(Path(dst).parent.mkdir(parents=True,exist_ok=True),shutil.copy2(src,dst)) "
+            "for src,dst in pairs]"
+        ),
+    ],
+    descr="VT",
+    color="green",
+)
+group("vterm-c-sdk", vterm_c_sdk)
 
 add_test(production_surface, pretty_binary_branding, instrumented=False)
 

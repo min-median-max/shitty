@@ -136,6 +136,7 @@ namespace {
         bool selectOrdinal(size_t ordinal);
         bool close(size_t index) override;
         bool closeActive();
+        void updateTabWalkBindings();
         void publishSessionsChanged();
         void runReaper();
         void reapReady();
@@ -342,6 +343,7 @@ void SessionSetImpl::newSession() {
         sessions.pushBack(session);
     }
     const size_t index = count_++;
+    updateTabWalkBindings();
     SessionSet::liveSessions = (sig_atomic_t)(count_);
     handle->engage();
     PtyReadBody* const reader = arena->make<PtyReadBody>(this, session.id, *handle, *terminal);
@@ -369,6 +371,7 @@ bool SessionSetImpl::close(size_t index) {
         sessions.mut(at) = sessions[at + 1];
     }
     --count_;
+    updateTabWalkBindings();
     SessionSet::liveSessions = (sig_atomic_t)(count_);
     if (graveCount_ < graves.length()) {
         graves.mut(graveCount_) = grave;
@@ -428,6 +431,15 @@ void SessionSetImpl::activate(size_t index) {
 
 bool SessionSetImpl::closeActive() {
     return close(active_);
+}
+
+void SessionSetImpl::updateTabWalkBindings() {
+    prevTabAction.unlink();
+    nextTabAction.unlink();
+    if (count_ > 1) {
+        composer.prevTabListeners.pushBack(&prevTabAction);
+        composer.nextTabListeners.pushBack(&nextTabAction);
+    }
 }
 
 void SessionSetImpl::everyTerminalResized() {
@@ -582,8 +594,6 @@ SessionSet* SessionSet::create(Composer& composer) {
     composer.eraseWordListeners.pushBack(&sessions->eraseWordAction);
     composer.newTabListeners.pushBack(&sessions->newTabAction);
     composer.closeTabListeners.pushBack(&sessions->closeTabAction);
-    composer.prevTabListeners.pushBack(&sessions->prevTabAction);
-    composer.nextTabListeners.pushBack(&sessions->nextTabAction);
     for (unsigned at = 0; at < 9; ++at) {
         composer.selectTabListeners[at].pushBack(&sessions->selectTabActions[at]);
     }

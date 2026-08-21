@@ -124,6 +124,28 @@ namespace {
 }
 
 STD_TEST_SUITE(VtermHeadless) {
+    STD_TEST(ExposesProductionSnapshotState) {
+        auto pool = ObjPool::fromMemory();
+        Composer& composer = *pool->make<Composer>(pool.mutPtr());
+        VtermHeadless* const headless = VtermHeadless::create(composer, nullptr, nullptr, 12, 3);
+        const u8 input[] = {'A', '\x1b', '[', '?', '1', 'h'};
+
+        headless->feed(input, sizeof(input));
+        VtermSnapshot snapshot = headless->terminal()->snapshot();
+        VtermSnapshotCell cell;
+
+        STD_INSIST(snapshot.columns == 12);
+        STD_INSIST(snapshot.rows == 3);
+        STD_INSIST(snapshot.applicationCursor);
+        STD_INSIST(headless->terminal()->snapshotCell(0, 0, cell));
+        STD_INSIST(cell.cell.uc_pt == 'A');
+
+        headless->resize(7, 4);
+        snapshot = headless->terminal()->snapshot();
+        STD_INSIST(snapshot.columns == 7);
+        STD_INSIST(snapshot.rows == 4);
+    }
+
     STD_TEST(InstallsMissingComposerDependencies) {
         auto pool = ObjPool::fromMemory();
         Composer& composer = *pool->make<Composer>(pool.mutPtr());

@@ -91,6 +91,17 @@ STD_TEST_SUITE(InputBindings) {
         STD_INSIST(listener.calls == 0);
     }
 
+    STD_TEST(DoesNotConsumeBindingWithoutAListener) {
+        auto pool = ObjPool::fromMemory();
+        Composer& composer = *pool->make<Composer>(pool.mutPtr());
+
+#if defined(__APPLE__)
+        STD_INSIST(!composer.inputBindings->key({InputKey::Left, InputAction::Press, InputSuper}));
+#else
+        STD_INSIST(!composer.inputBindings->key({InputKey::Printable, InputAction::Press, tabModifiers, 0, 't'}));
+#endif
+    }
+
     STD_TEST(TracksRepeatedPlatformBinding) {
         auto pool = ObjPool::fromMemory();
         Composer& composer = *pool->make<Composer>(pool.mutPtr());

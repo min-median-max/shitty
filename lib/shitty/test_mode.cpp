@@ -2162,42 +2162,34 @@ int runTestMode(Composer& composer, TestInput& input, plt::WindowEvents& events,
         raiseError(StringView(u8"active session has no harness kit"));
     };
     Vterm* trackedActiveTerminal = sessions->activeTerminal();
-    TestSessionAction trackNewSession([&]() {
-        TestPty* const extraPty = ptyFactory.handles.back();
-        VtermTraceImpl* const extraTrace = traceFactory.traces.back();
-        {
-            Buffer discardedActions;
-            extraTrace->drainActions(discardedActions);
-        }
-        sessionKits.pushBack({composer.pool->make<TestTerminal>(composer, *sessions->activeTerminal(), *extraTrace->testApi, *extraPty, renderer, window), extraPty, extraTrace});
-        trackedActiveTerminal = sessions->activeTerminal();
-    });
-    TestSessionAction trackClosedSession([&]() {
-        size_t closed = sessionKits.length();
-        for (size_t at = 0; at < sessionKits.length(); ++at) {
-            if (&sessionKits[at].terminal->terminal == trackedActiveTerminal) {
-                closed = at;
-                break;
+    TestSessionAction trackSessionModel([&]() {
+        if (sessions->count() > sessionKits.length()) {
+            TestPty* const extraPty = ptyFactory.handles.back();
+            VtermTraceImpl* const extraTrace = traceFactory.traces.back();
+            {
+                Buffer discardedActions;
+                extraTrace->drainActions(discardedActions);
             }
+            sessionKits.pushBack({composer.pool->make<TestTerminal>(composer, *sessions->activeTerminal(), *extraTrace->testApi, *extraPty, renderer, window), extraPty, extraTrace});
+        } else if (sessions->count() < sessionKits.length()) {
+            size_t closed = sessionKits.length();
+            for (size_t at = 0; at < sessionKits.length(); ++at) {
+                if (&sessionKits[at].terminal->terminal == trackedActiveTerminal) {
+                    closed = at;
+                    break;
+                }
+            }
+            if (closed == sessionKits.length()) {
+                raiseError(StringView(u8"closed session has no harness kit"));
+            }
+            for (size_t at = closed; at + 1 < sessionKits.length(); ++at) {
+                sessionKits.mut(at) = sessionKits[at + 1];
+            }
+            sessionKits.popBack();
         }
-        if (closed == sessionKits.length()) {
-            raiseError(StringView(u8"closed session has no harness kit"));
-        }
-        for (size_t at = closed; at + 1 < sessionKits.length(); ++at) {
-            sessionKits.mut(at) = sessionKits[at + 1];
-        }
-        sessionKits.popBack();
         trackedActiveTerminal = sessions->activeTerminal();
     });
-    const auto trackSwitch = [&]() {
-        trackedActiveTerminal = sessions->activeTerminal();
-    };
-    TestSessionAction trackPreviousSession(trackSwitch);
-    TestSessionAction trackNextSession(trackSwitch);
-    composer.newTabListeners.pushBack(&trackNewSession);
-    composer.closeTabListeners.pushBack(&trackClosedSession);
-    composer.prevTabListeners.pushBack(&trackPreviousSession);
-    composer.nextTabListeners.pushBack(&trackNextSession);
+    composer.sessionsChangedListeners.pushBack(&trackSessionModel);
     FailFontChange failFontChange;
     composer.fontChangedListeners.pushFront(&failFontChange);
     pid_t childPid = -1;

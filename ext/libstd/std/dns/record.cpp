@@ -10,12 +10,11 @@
 
 using namespace stl;
 
-#if defined(__APPLE__)
 template <>
-void stl::output<ZeroCopyOutput, DnsRecord>(ZeroCopyOutput& out, const DnsRecord& rec) {
-#else
-template <>
+#if 3 * __SIZEOF_POINTER__ <= 2 * __SIZEOF_LONG_DOUBLE__
 void stl::output<ZeroCopyOutput, DnsRecord>(ZeroCopyOutput& out, DnsRecord rec) {
+#else
+void stl::output<ZeroCopyOutput, DnsRecord>(ZeroCopyOutput& out, const DnsRecord& rec) {
 #endif
     size_t avail = 64;
     auto buf = (char*)out.imbue(&avail);

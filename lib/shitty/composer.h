@@ -45,6 +45,9 @@ struct VtermTraceFactory;
 struct FontRequest;
 
 enum class FontKind : u8;
+enum class ComposerProfile : u8 {
+    HeadlessTerminal,
+};
 
 // Application wiring. Components retain Composer itself and read dependencies
 // here when needed; they do not cache aliases of these canonical fields.
@@ -52,6 +55,7 @@ enum class FontKind : u8;
 struct Composer {
     explicit Composer(stl::ObjPool* pool);
     Composer(stl::ObjPool* pool, Brand& brand);
+    Composer(stl::ObjPool* pool, ComposerProfile profile);
 
     void setContentScale(float scale);
     void setGlyphSize(u16 width, u16 height);

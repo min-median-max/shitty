@@ -311,6 +311,7 @@ namespace {
         PtyImpl(ObjPool& owner, plt::Scheduler& scheduler, plt::Platform* platform);
 
         PtyHandle* spawn(ObjPool& owner, const LaunchCommand& command) override;
+        size_t writeBackpressureBytes() const override { return writeBudget * blockPayloadLimit; }
         // The doorbell on the platform thread: a spurious wake is safe by
         // the fiber contract, so it wakes everyone and lets them look.
         void ready() override;
@@ -902,6 +903,9 @@ PtyHandle* PtyImpl::spawn(ObjPool& owner, const LaunchCommand& command) {
         }
         if (ioctl(slave, TIOCSCTTY, 0) < 0) {
             childError("Error: TIOCSCTTY");
+        }
+        if (tcsetpgrp(slave, getpgrp()) < 0) {
+            childError("Error: tcsetpgrp");
         }
         close(master);
         redirectFds(slave);

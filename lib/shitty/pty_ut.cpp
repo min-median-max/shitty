@@ -472,7 +472,9 @@ STD_TEST_SUITE(Pty) {
         fixture.scheduler->create(*owner, reader);
         STD_INSIST(!readerReturned);
 
-        std::string input(1024 * 1024, 'x');
+        const size_t backpressure = fixture.pty->writeBackpressureBytes();
+        STD_INSIST(backpressure > 0);
+        std::string input(backpressure * 2 + 1, 'x');
         bool writerReturned = false;
         auto writer = makeRunable([&] {
             sendAll(*handle, input.data(), input.size());

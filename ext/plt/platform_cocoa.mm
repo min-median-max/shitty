@@ -1899,7 +1899,7 @@ void WindowImpl::scroll(NSEvent* event) {
             .pixelY = (int)(point.y),
             .modifiers = modifiers(event.modifierFlags),
             .phase = scrollPhase(momentum ? event.momentumPhase : event.phase),
-            .precise = event.hasPreciseScrollingDeltas,
+            .precise = event.hasPreciseScrollingDeltas == YES,
             .momentum = momentum,
             .time = event.timestamp,
         });

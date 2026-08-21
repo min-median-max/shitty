@@ -176,6 +176,9 @@ static bool sameChordKey(const InputBinding& binding, InputKey key, u32 baseCode
 RegisteredBinding* InputBindingsImpl::find(const KeyInput& input) {
     const u16 modifiers = normalizedModifiers(input.modifiers);
     for (RegisteredBinding* binding = bindings_.mutBegin(); binding != bindings_.mutEnd(); ++binding) {
+        if (binding->listeners->empty()) {
+            continue;
+        }
         if (binding->input.naturalEditing && !composer_.opts->naturalEditing) {
             continue;
         }

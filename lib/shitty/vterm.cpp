@@ -474,6 +474,8 @@ namespace {
         const TerminalUpdate* output() override;
         void consume() override;
         VtermState state() const override;
+        VtermSnapshot snapshot() const override;
+        bool snapshotCell(i32 logicalRow, u16 column, VtermSnapshotCell& result) const override;
         TestApi* createTestApi();
 
         void parserResetGraphemeInput() override;
@@ -2774,6 +2776,43 @@ VtermState VtermImpl::state() const {
     VtermState result;
     result.synchronizedOutput = synchronizedOutputMode;
     return result;
+}
+
+VtermSnapshot VtermImpl::snapshot() const {
+    VtermSnapshot result;
+    const ScreenInfo info = cf->info();
+    result.historyRows = info.historyRows;
+    result.columns = info.columns;
+    result.rows = info.rows;
+    result.cursorX = posX;
+    result.cursorY = posY;
+    result.bracketedPaste = bracketedPasteMode;
+    result.applicationCursor = cursorKeyMode == CursorKeyMode::Application;
+    result.applicationKeypad = keypadMode == KeypadMode::Application;
+    result.mouseClick = mouseTrk.mode == MouseTrackingMode::VT200;
+    result.mouseDrag = mouseTrk.mode == MouseTrackingMode::VT200_ButtonEvent;
+    result.mouseMotion = mouseTrk.mode == MouseTrackingMode::VT200_AnyEvent;
+    result.sgrMouse = mouseTrk.enc == MouseTrackingEnc::SGR;
+    result.utf8Mouse = mouseTrk.enc == MouseTrackingEnc::UTF8;
+    result.focusEvents = mouseTrk.focusEventMode;
+    result.alternateScroll = altScrollMode;
+    result.showCursor = showCursorMode;
+    result.lineWrap = autoWrapMode;
+    result.insert = insertMode;
+    result.alternateScreen = altScreenBufferMode;
+    return result;
+}
+
+bool VtermImpl::snapshotCell(i32 logicalRow, u16 column, VtermSnapshotCell& result) const {
+    const ScreenInfo info = cf->info();
+    if (logicalRow < -(i32)(info.historyRows) || logicalRow >= info.rows || column >= info.columns) {
+        return false;
+    }
+    result.cell = cf->testLogicalCell(logicalRow, column);
+    result.grapheme = composer.cellExtras->grapheme(result.cell.extraRef());
+    result.underlineColor = composer.cellExtras->underlineColor(result.cell);
+    result.lineAttribute = cf->lineAttribute(logicalRow < 0 ? 0 : (u16)(logicalRow));
+    return true;
 }
 
 TestApi* VtermImpl::createTestApi() {

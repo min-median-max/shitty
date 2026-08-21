@@ -28,6 +28,7 @@
 using namespace stl;
 
 namespace {
+    constexpr CGFloat syntheticItalicShear = 0.1405408347;
     struct CoreTextFont final: public Font {
         CoreTextFont(Composer& composer, IntrusivePtr<FontFace> source, CTFontRef font, FontKind kind, FontMetrics metrics, FontStyle synthetic);
         ~CoreTextFont() noexcept;
@@ -183,7 +184,7 @@ void CoreTextFont::render(const u32* codepoints, size_t count, u16 cells, void* 
     }
     CGAffineTransform matrix = CGAffineTransformIdentity;
     if (syntheticItalic_) {
-        matrix.c = 0.25;
+        matrix.c = syntheticItalicShear;
     }
     CGContextSetTextMatrix(context, matrix);
 
@@ -420,8 +421,7 @@ bool CoreTextFont::drawLine(CTLineRef line, bool color) {
     }
     CGAffineTransform matrix = CGAffineTransformIdentity;
     if (syntheticItalic_) {
-        // Fake italic: a horizontal shear of about 14 degrees.
-        matrix.c = 0.25;
+        matrix.c = syntheticItalicShear;
     }
     CGContextSetTextMatrix(context, matrix);
     CGContextSetTextPosition(context, 0, metrics_.height - metrics_.baseline);
@@ -820,6 +820,9 @@ FontMetrics CoreTextFontRenderer::measure(CTFontRef font) {
 }
 
 Font* CoreTextFontRenderer::render(ObjPool& owner, IntrusivePtr<FontFace> face, u16 pixels, FontKind kind, FontMetrics& metrics) {
+    if (composer.opts->soft >= 0) {
+        return nullptr;
+    }
     CTFontRef font = openFace(*face, pixels);
     if (font == nullptr) {
         return nullptr;

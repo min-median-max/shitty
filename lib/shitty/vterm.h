@@ -7,6 +7,7 @@
 #pragma once
 
 #include "rect.h"
+#include "grapheme.h"
 #include "terminal_types.h"
 
 #include <plt/input.h>
@@ -103,6 +104,35 @@ struct VtermState {
     bool synchronizedOutput = false;
 };
 
+struct VtermSnapshot {
+    u32 historyRows = 0;
+    u16 columns = 0;
+    u16 rows = 0;
+    u16 cursorX = 0;
+    u16 cursorY = 0;
+    bool bracketedPaste = false;
+    bool applicationCursor = false;
+    bool applicationKeypad = false;
+    bool mouseClick = false;
+    bool mouseDrag = false;
+    bool mouseMotion = false;
+    bool sgrMouse = false;
+    bool utf8Mouse = false;
+    bool focusEvents = false;
+    bool alternateScroll = false;
+    bool showCursor = true;
+    bool lineWrap = true;
+    bool insert = false;
+    bool alternateScreen = false;
+};
+
+struct VtermSnapshotCell {
+    TerminalCell cell{};
+    GraphemeView grapheme;
+    CellColor underlineColor;
+    u8 lineAttribute = 0;
+};
+
 struct TerminalUpdate {
     // The damaged view rows, ascending; each re-renders wholly.
     const TerminalRow* rows = nullptr;
@@ -194,6 +224,8 @@ struct Vterm {
     virtual const TerminalUpdate* output() = 0;
     virtual void consume() = 0;
     virtual VtermState state() const = 0;
+    virtual VtermSnapshot snapshot() const = 0;
+    virtual bool snapshotCell(i32 logicalRow, u16 column, VtermSnapshotCell& result) const = 0;
 
     // The window geometry changed: adopt the composer's grid and redraw.
     // Delivered to every session, background ones included - a terminal

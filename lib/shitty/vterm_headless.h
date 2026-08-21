@@ -20,11 +20,12 @@ struct VtermTraceFactory;
 
 struct VtermHeadless {
     virtual void feed(const u8* data, size_t len) = 0;
+    virtual void resize(u16 columns, u16 rows) = 0;
     // The one terminal this host built and feeds; the host owns it for
     // the process lifetime, there is no session set to ask.
     virtual Vterm* terminal() = 0;
 
     // ptyCapture observes what the terminal writes toward its child;
     // null discards it.
-    static VtermHeadless* create(Composer& composer, VtermTraceFactory* traceFactory, stl::Output* ptyCapture = nullptr);
+    static VtermHeadless* create(Composer& composer, VtermTraceFactory* traceFactory, stl::Output* ptyCapture = nullptr, u16 columns = 80, u16 rows = 24);
 };

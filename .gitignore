@@ -27,3 +27,6 @@ __pycache__/
 /ext/plt/plt_wayland_integration_tests
 /toml_dump
 /bounce*.log
+libshitty_test
+pty_test_helper
+vterm_c_smoke

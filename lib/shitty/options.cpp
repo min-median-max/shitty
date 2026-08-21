@@ -792,18 +792,6 @@ Options* Options::create(ObjPool& pool, Brand& brand, char** argv, int argc, Opt
     return pool.make<OptionsParser>(pool, brand, argv, argc, load);
 }
 
-bool Options::uriSchemeAllowed(StringView scheme) const {
-    u8 folded[128];
-    if (scheme.length() > sizeof(folded)) {
-        return false;
-    }
-    for (size_t index = 0; index < scheme.length(); ++index) {
-        const u8 byte = scheme[index];
-        folded[index] = byte >= 'A' && byte <= 'Z' ? (u8)(byte + ('a' - 'A')) : byte;
-    }
-    return uriSchemeTrie->find(StringView(folded, scheme.length())) != Darts::missing;
-}
-
 void OptionsParser::initialize(int* argc, char** argv) {
     int output = 1;
 

@@ -71,6 +71,7 @@ struct PtyHandle {
 // handle is ever engaged.
 struct Pty {
     virtual PtyHandle* spawn(stl::ObjPool& owner, const LaunchCommand& command) = 0;
+    virtual size_t writeBackpressureBytes() const { return 0; }
 };
 
 Pty* createPty(stl::ObjPool& owner, plt::Scheduler& scheduler, plt::Platform* platform = nullptr);

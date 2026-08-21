@@ -7,6 +7,7 @@
 #include "session.h"
 
 #include "composer.h"
+#include "input_bindings.h"
 #include "listener.h"
 #include "pty.h"
 #include "startup.h"
@@ -310,6 +311,23 @@ STD_TEST_SUITE(SessionSet) {
         harness.previousTab();
 
         STD_INSIST(harness.sessions->activeTerminal() == only);
+    }
+
+    STD_TEST(TabWalkChordIsActiveOnlyWithMultipleSessions) {
+        Harness harness;
+#if defined(__APPLE__)
+        const plt::KeyInput previous{plt::InputKey::Left, plt::InputAction::Press, plt::InputSuper};
+#else
+        const plt::KeyInput previous{plt::InputKey::Printable, plt::InputAction::Press, plt::InputControl | plt::InputShift, 0, '['};
+#endif
+
+        STD_INSIST(!harness.composer.inputBindings->key(previous));
+        harness.newTab();
+        STD_INSIST(harness.composer.inputBindings->key(previous));
+        STD_INSIST(harness.sessions->activeIndex() == 0);
+        STD_INSIST(harness.composer.inputBindings->key({previous.key, plt::InputAction::Release, previous.modifiers, previous.layoutCodepoint, previous.baseCodepoint, previous.shiftedCodepoint}));
+        harness.closeTab();
+        STD_INSIST(!harness.composer.inputBindings->key(previous));
     }
 
     STD_TEST(CloseTabDestroysItsWholeArena) {

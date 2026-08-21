@@ -239,11 +239,11 @@ class GhosttyKeyEncodingTailTest(unittest.TestCase):
 
             self.assertEqual(terminal.read_input(), b"\x03")
 
-    def test_russian_shift_ctrl_c_has_no_legacy_control_sequence(self):
+    def test_russian_shift_ctrl_c_uses_the_ascii_base_key(self):
         with Shitty(columns=8, rows=2) as terminal:
             terminal.layout_key("C", "с", "c", modifiers=3)
 
-            self.assertEqual(terminal.read_input(), b"")
+            self.assertEqual(terminal.read_input(), b"")
 
     def test_russian_alt_ctrl_c_prefixes_escape_to_etx(self):
         with Shitty(columns=8, rows=2) as terminal:

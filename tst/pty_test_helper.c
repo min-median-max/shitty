@@ -4,12 +4,16 @@
  * See the file LICENSE.MIT for the full license.
  */
 
+#if defined(__APPLE__)
+#define _DARWIN_C_SOURCE
+#endif
 #define _POSIX_C_SOURCE 200809L
 
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <termios.h>
 #include <unistd.h>
 
 static int write_all(const char* data, size_t size) {
@@ -29,9 +33,14 @@ static int ready(void) {
     return write_all(message, sizeof(message) - 1);
 }
 
+static void retain_signal(int signal_number) {
+    (void)signal_number;
+}
+
 static int wait_for_winsize(void) {
     sigset_t signals;
-    if (sigemptyset(&signals) != 0 ||
+    if (signal(SIGWINCH, retain_signal) == SIG_ERR ||
+        sigemptyset(&signals) != 0 ||
         sigaddset(&signals, SIGWINCH) != 0 ||
         sigprocmask(SIG_BLOCK, &signals, NULL) != 0 ||
         ready() != 0) {
@@ -62,6 +71,10 @@ static int wait_for_winsize(void) {
 
 static int wait_for_hangup(void) {
     sigset_t signals;
+    struct termios terminal;
+    if (tcgetattr(STDIN_FILENO, &terminal) != 0) return 1;
+    cfmakeraw(&terminal);
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &terminal) != 0) return 1;
     if (signal(SIGHUP, SIG_DFL) == SIG_ERR ||
         sigemptyset(&signals) != 0 ||
         sigaddset(&signals, SIGHUP) != 0 ||

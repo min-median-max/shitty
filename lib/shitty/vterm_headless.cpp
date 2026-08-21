@@ -60,6 +60,7 @@ namespace {
         explicit VtermHeadlessImpl(Composer& composer);
 
         void feed(const u8* data, size_t len) override;
+        void resize(u16 columns, u16 rows) override;
         Vterm* terminal() override;
 
         Composer& composer;
@@ -174,9 +175,19 @@ Vterm* VtermHeadlessImpl::terminal() {
     return terminal_;
 }
 
-VtermHeadless* VtermHeadless::create(Composer& composer, VtermTraceFactory* traceFactory, Output* ptyCapture) {
-    constexpr u16 columns = 80;
-    constexpr u16 rows = 24;
+void VtermHeadlessImpl::resize(u16 columns, u16 rows) {
+    if (columns == 0 || rows == 0) {
+        raiseError(StringView(u8"headless Vterm dimensions must be nonzero"));
+    }
+    const u16 pixelWidth = 2 * composer.borderPixels() + columns * composer.glyphWidth;
+    const u16 pixelHeight = 2 * composer.borderPixels() + rows * composer.glyphHeight;
+    composer.resize(pixelWidth, pixelHeight);
+}
+
+VtermHeadless* VtermHeadless::create(Composer& composer, VtermTraceFactory* traceFactory, Output* ptyCapture, u16 columns, u16 rows) {
+    if (columns == 0 || rows == 0) {
+        raiseError(StringView(u8"headless Vterm dimensions must be nonzero"));
+    }
     constexpr u16 glyphWidth = 1;
     constexpr u16 glyphHeight = 1;
     const u16 pixelWidth = 2 * composer.borderPixels() + columns * glyphWidth;
