@@ -146,6 +146,14 @@ libplt = library(
     output="$(B)/libplt.a",
 )
 
+libplt_headless = library(
+    name="plt_headless",
+    srcs=common_sources,
+    public_cflags=["-I$(S)", "-I$(S)/.."],
+    deps=[libstd],
+    output="$(B)/libplt_headless.a",
+)
+
 if build.target == build.host:
     plt_unit_test_sources = [
         "$(S)/tests/test_ut.cpp",

@@ -235,8 +235,15 @@ elif os.path.isfile(os.path.join(os.path.dirname(__file__), plt_build)):
         extra_cflags=embedded_path_flags,
         extra_cppflags=["-Dno_vendored_std", "-I$(S)/../libstd"],
     )
+    plt_headless = import_build(
+        plt_build,
+        "libplt_headless.a",
+        extra_cflags=embedded_path_flags,
+        extra_cppflags=["-Dno_vendored_std", "-I$(S)/../libstd"],
+    )
 else:
     plt = dependency(ldflags=["-lplt"])
+    plt_headless = dependency(ldflags=["-lplt_headless"])
 
 
 # plt ships its own test suite (unit tests plus fake-compositor integration
@@ -776,7 +783,7 @@ libshitty_vt = library(
     name="libshitty_vt",
     srcs=libshitty_vt_sources,
     cxxflags=production_path_flags,
-    deps=[plt, threads, libstd],
+    deps=[plt_headless, threads, libstd],
     output="$(B)/libshitty_vt.a",
 )
 
@@ -3696,11 +3703,11 @@ vterm_c_sdk = command(
     inputs=["$(S)/lib/shitty/vterm_c.h"],
     outputs=[
         "$(B)/vterm-c/lib/libshitty_vt.a",
-        "$(B)/vterm-c/lib/libplt.a",
+        "$(B)/vterm-c/lib/libplt_headless.a",
         "$(B)/vterm-c/lib/libstd.a",
         "$(B)/vterm-c/include/vterm_c.h",
     ],
-    deps=[libshitty_vt, plt, libstd],
+    deps=[libshitty_vt, plt_headless, libstd],
     cmd=[
         "python3",
         "-c",
@@ -3708,7 +3715,7 @@ vterm_c_sdk = command(
             "from pathlib import Path; import shutil; "
             "pairs=["
             "(r'$(B)/libshitty_vt.a',r'$(B)/vterm-c/lib/libshitty_vt.a'),"
-            "(r'$(B)/ext/plt/libplt.a',r'$(B)/vterm-c/lib/libplt.a'),"
+            "(r'$(B)/ext/plt/libplt_headless.a',r'$(B)/vterm-c/lib/libplt_headless.a'),"
             "(r'$(B)/ext/libstd/libstd.a',r'$(B)/vterm-c/lib/libstd.a'),"
             "(r'$(S)/lib/shitty/vterm_c.h',r'$(B)/vterm-c/include/vterm_c.h')]; "
             "[(Path(dst).parent.mkdir(parents=True,exist_ok=True),shutil.copy2(src,dst)) "
