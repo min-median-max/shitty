@@ -204,6 +204,12 @@ Common build options:
 CPPFLAGS=-DDEBUG ./build
 ```
 
+The version compiled into the terminal is derived from `SOURCE_DATE_EPOCH` in UTC. In an exact Git
+checkout the build uses the current source commit timestamp when the variable is unset. A source
+archive has no commit metadata and must provide `SOURCE_DATE_EPOCH` explicitly. The wall clock is
+never a version input, so one source revision produces the same version on every build date and
+timezone.
+
 ## Run
 
 Start the default shell:
