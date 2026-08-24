@@ -142,6 +142,14 @@ class BuildMetadataTests(unittest.TestCase):
         self.assertNotIn("git submodule", readme)
         self.assertIn("ext/libstd", readme)
 
+    def test_static_sdk_bytes_exclude_node_work_paths_and_archive_metadata(self):
+        runner = (ROOT / "build").read_text()
+        primary = (ROOT / "build.py").read_text()
+        self.assertIn('W = "$(W)"', runner)
+        self.assertIn('.replace(W, str(work))', runner)
+        self.assertIn('"rcsD"', runner)
+        self.assertEqual(primary.count('"-ffile-prefix-map=$(W)=."'), 2)
+
     def test_header_probe_uses_target_compiler_and_current_flags(self):
         loader = SourceFileLoader("shitty_build_header_probe", str(ROOT / "build"))
         spec = importlib.util.spec_from_loader(loader.name, loader)
