@@ -1,17 +1,20 @@
+# Copyright (C) 2026 Shitty team
+# MIT licensed
+# See the file LICENSE.MIT for the full license.
+
 import hashlib
 import json
 import os
 import shutil
 import subprocess
-from datetime import date
 from pathlib import Path
 
 import build
+from build_version import source_version
 
 
 std_build = os.path.join("ext", "libstd", "build.py")
 plt_build = os.path.join("ext", "plt", "build.py")
-shitty_version = date.today().strftime("%Y.%m.%d")
 
 build.flags.allow({
     "group": {
@@ -23,6 +26,21 @@ build.flags.allow({
         "default": "",
     },
 })
+version_environment = dict(os.environ)
+if not version_environment.get("SOURCE_DATE_EPOCH"):
+    try:
+        version_environment["SOURCE_DATE_EPOCH"] = subprocess.check_output(
+            ["git", "-C", str(Path(__file__).resolve().parent), "show", "-s", "--format=%ct", "HEAD"],
+            text=True,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise RuntimeError(
+            "SOURCE_DATE_EPOCH is required when building outside an exact Git checkout"
+        ) from error
+try:
+    shitty_version = source_version(version_environment)
+except ValueError as error:
+    raise RuntimeError(str(error)) from None
 
 
 def parse_test_partition():
