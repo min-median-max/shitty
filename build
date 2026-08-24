@@ -40,6 +40,7 @@ from typing import Any, Iterable
 
 S = "$(S)"
 B = "$(B)"
+W = "$(W)"
 
 ANSI_COLORS = {
     "red": "31", "green": "32", "yellow": "33", "blue": "34",
@@ -312,10 +313,31 @@ class BuildContext:
         self.host_cppflags = shlex.split(os.environ.get("HOST_CPPFLAGS", ""))
         self.cc = os.environ.get("CC", "cc")
         self.cxx = os.environ.get("CXX", "c++")
-        self.ar = os.environ.get("AR") or shutil.which("ar") or shutil.which("llvm-ar") or "ar"
+        self.ar = os.environ.get("AR") or self._compiler_archiver(self.cxx)
         self.tool_paths: dict[str, str] = {}
         self.tool_kinds: dict[str, str] = {}
         self.imported_graphs: dict[tuple[Any, ...], ImportedGraph] = {}
+
+    @staticmethod
+    def _compiler_archiver(compiler: str) -> str:
+        compiler_path = Path(compiler)
+        if not compiler_path.is_absolute():
+            found = shutil.which(compiler)
+            compiler_path = Path(found) if found else compiler_path
+        candidates: list[Path] = []
+        if compiler_path.parent != Path("."):
+            candidates.append(compiler_path.parent / "llvm-ar")
+            suffix = re.search(r"(-[0-9]+(?:[.][0-9]+)*)$", compiler_path.name)
+            if suffix:
+                candidates.append(compiler_path.parent / f"llvm-ar{suffix.group(1)}")
+        for name in ("llvm-ar", "ar"):
+            found = shutil.which(name)
+            if found:
+                candidates.append(Path(found))
+        for candidate in candidates:
+            if candidate.is_file() and os.access(candidate, os.X_OK):
+                return str(candidate)
+        return "ar"
 
     def resolve_tool(self, name: str) -> str:
         cached = self.tool_paths.get(name)
@@ -1235,7 +1257,7 @@ class BuildContext:
         target.uses_cxx = uses_cxx or any(dep.uses_cxx for dep in target.deps)
         if target.kind == "library":
             output = target.output or f"{B}/lib{target.name}.a"
-            command = [self.ar, "rcs", output, *[node.outputs[0] for node in objects]]
+            command = [self.ar, "rcsD", output, *[node.outputs[0] for node in objects]]
             root = Node([], [output], [command], deps=objects, descr="AR", color="light-red")
         else:
             output = target.output or f"{B}/{target.name}"
@@ -2264,7 +2286,7 @@ class Executor:
             database.executemany("INSERT INTO inputs VALUES (?, ?)", input_rows)
 
     def _mount(self, value: str, work: Path) -> str:
-        return str(value).replace(S, str(self.context.source_root)).replace(B, str(work))
+        return str(value).replace(S, str(self.context.source_root)).replace(B, str(work)).replace(W, str(work))
 
     def _manifest_path(self, uid: str) -> Path:
         return self.uids / uid[0] / uid

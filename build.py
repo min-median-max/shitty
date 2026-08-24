@@ -113,6 +113,7 @@ production_path_flags = [
     "-ffile-prefix-map=$(S)/ext=ext",
     "-ffile-prefix-map=$(S)/tst=tst",
     "-ffile-prefix-map=$(B)=.",
+    "-ffile-prefix-map=$(W)=.",
 ]
 
 
@@ -207,6 +208,7 @@ embedded_path_flags = [
     "-Wno-error",
     "-ffile-prefix-map=$(S)=.",
     "-ffile-prefix-map=$(B)=.",
+    "-ffile-prefix-map=$(W)=.",
 ]
 
 
