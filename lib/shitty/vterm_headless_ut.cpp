@@ -146,6 +146,30 @@ STD_TEST_SUITE(VtermHeadless) {
         STD_INSIST(snapshot.rows == 4);
     }
 
+    STD_TEST(ExposesRawOscColorOverridesAndReset) {
+        auto pool = ObjPool::fromMemory();
+        Composer& composer = *pool->make<Composer>(pool.mutPtr());
+        VtermHeadless* const headless = VtermHeadless::create(composer, nullptr, nullptr, 12, 3);
+        const char set[] = "\x1b]4;1;#123456\x07\x1b]10;#abcdef\x07\x1b]11;#223344\x07\x1b]12;#654321\x07";
+        headless->feed((const u8*)(set), sizeof(set) - 1);
+
+        VtermThemeOverrides theme = headless->terminal()->themeOverrides();
+        STD_INSIST(theme.hasForeground);
+        STD_INSIST((theme.foreground == Color{0xab, 0xcd, 0xef}));
+        STD_INSIST(theme.hasBackground);
+        STD_INSIST((theme.background == Color{0x22, 0x33, 0x44}));
+        STD_INSIST(theme.hasCursor);
+        STD_INSIST((theme.cursor == Color{0x65, 0x43, 0x21}));
+        STD_INSIST((theme.paletteMask[0] & (1ull << 1)) != 0);
+        STD_INSIST((theme.palette[1] == Color{0x12, 0x34, 0x56}));
+
+        const char reset[] = "\x1b]104;1\x07\x1b]110\x07\x1b]111\x07\x1b]112\x07";
+        headless->feed((const u8*)(reset), sizeof(reset) - 1);
+        theme = headless->terminal()->themeOverrides();
+        STD_INSIST(!theme.hasForeground && !theme.hasBackground && !theme.hasCursor);
+        STD_INSIST((theme.paletteMask[0] & (1ull << 1)) == 0);
+    }
+
     STD_TEST(InstallsMissingComposerDependencies) {
         auto pool = ObjPool::fromMemory();
         Composer& composer = *pool->make<Composer>(pool.mutPtr());
