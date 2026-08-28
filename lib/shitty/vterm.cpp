@@ -109,6 +109,8 @@ void MouseTrackingState::setEncoding(MouseTrackingEnc value) {
 
 namespace {
     static constexpr u64 selectionAutoscrollInterval = 50'000;
+    static constexpr u64 cursorBlinkIntervalUs = 500'000;
+    static constexpr u32 cursorBlinkIntervalMs = cursorBlinkIntervalUs / 1'000;
 
     static StringView stringView(const Buffer& value) {
         return StringView(value);
@@ -2788,6 +2790,7 @@ VtermSnapshot VtermImpl::snapshot() const {
     result.cursorY = posY;
     result.cursorStyle = cursorShape;
     result.cursorBlink = cursorBlinkMode;
+    result.cursorBlinkIntervalMs = cursorBlinkIntervalMs;
     result.bracketedPaste = bracketedPasteMode;
     result.applicationCursor = cursorKeyMode == CursorKeyMode::Application;
     result.applicationKeypad = keypadMode == KeypadMode::Application;
@@ -3125,7 +3128,7 @@ bool VtermImpl::animationActive() const {
 
 void VtermImpl::enableBlinkingText() {
     if (!animationActive()) {
-        nextBlink = monotonicNowUs() + 500'000;
+        nextBlink = monotonicNowUs() + cursorBlinkIntervalUs;
     }
     haveBlinkingText = true;
     wakeTimers();
@@ -3139,7 +3142,7 @@ void VtermImpl::exposeFrames() {
 void VtermImpl::refreshBlinkingText() {
     const bool blinking = cf->hasBlinkingText();
     if (blinking && !animationActive()) {
-        nextBlink = monotonicNowUs() + 500'000;
+        nextBlink = monotonicNowUs() + cursorBlinkIntervalUs;
     }
     haveBlinkingText = blinking;
     wakeTimers();
@@ -3294,7 +3297,7 @@ bool VtermImpl::advanceAnimation(bool force) {
     }
     blinkVisible = !blinkVisible;
     changePresentation();
-    nextBlink = now + 500'000;
+    nextBlink = now + cursorBlinkIntervalUs;
     wakeTimers();
     return true;
 }
@@ -3537,7 +3540,7 @@ void VtermImpl::resetScreen(bool resetTabStops) {
     cursorBlinkMode = false;
     haveBlinkingText = false;
     blinkVisible = true;
-    nextBlink = monotonicNowUs() + 500'000;
+    nextBlink = monotonicNowUs() + cursorBlinkIntervalUs;
     autoWrapMode = true;
     autoRepeatMode = true;
     smoothScrollMode = false;
@@ -4863,7 +4866,7 @@ void VtermImpl::setCursorStyle(u8 reportStyle, TerminalCursor::Style shape, bool
 
 void VtermImpl::refreshCursorStyle() {
     blinkVisible = true;
-    nextBlink = monotonicNowUs() + 500'000;
+    nextBlink = monotonicNowUs() + cursorBlinkIntervalUs;
     wakeTimers();
 }
 
@@ -5686,7 +5689,7 @@ void VtermImpl::setCursorBlink(bool enabled) {
     if (!enabled) {
         blinkVisible = true;
     }
-    nextBlink = monotonicNowUs() + 500'000;
+    nextBlink = monotonicNowUs() + cursorBlinkIntervalUs;
     wakeTimers();
 }
 

@@ -112,6 +112,7 @@ struct VtermSnapshot {
     u16 cursorY = 0;
     TerminalCursor::Style cursorStyle = TerminalCursor::Style::filled_block;
     bool cursorBlink = false;
+    u32 cursorBlinkIntervalMs = 0;
     bool bracketedPaste = false;
     bool applicationCursor = false;
     bool applicationKeypad = false;

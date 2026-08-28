@@ -15,6 +15,7 @@ int main(void) {
     assert(soksak_shitty_terminal_feed(terminal, cursor, sizeof(cursor)) == SOKSAK_SHITTY_SUCCESS);
     assert(soksak_shitty_terminal_snapshot(terminal, &snapshot) == SOKSAK_SHITTY_SUCCESS);
     assert(snapshot.cursor_style == SOKSAK_SHITTY_CURSOR_BAR && snapshot.cursor_blinking == 0);
+    assert(snapshot.cursor_blink_interval_ms == 500);
     SoksakShittyCell cell;
     uint32_t codepoint = 0;
     size_t required = 0;

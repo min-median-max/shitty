@@ -35,6 +35,7 @@ typedef struct {
     uint32_t history_rows;
     uint32_t suppressed_replies;
     uint32_t modes;
+    uint32_t cursor_blink_interval_ms;
     uint16_t columns;
     uint16_t rows;
     uint16_t cursor_x;
