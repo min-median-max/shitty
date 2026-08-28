@@ -41,6 +41,8 @@ from typing import Any, Iterable
 S = "$(S)"
 B = "$(B)"
 W = "$(W)"
+if sys.platform == "darwin":
+    os.environ.setdefault("ZERO_AR_DATE", "1")
 
 ANSI_COLORS = {
     "red": "31", "green": "32", "yellow": "33", "blue": "34",
@@ -1257,7 +1259,8 @@ class BuildContext:
         target.uses_cxx = uses_cxx or any(dep.uses_cxx for dep in target.deps)
         if target.kind == "library":
             output = target.output or f"{B}/lib{target.name}.a"
-            command = [self.ar, "rcsD", output, *[node.outputs[0] for node in objects]]
+            archive_flags = "rcs" if sys.platform == "darwin" else "rcsD"
+            command = [self.ar, archive_flags, output, *[node.outputs[0] for node in objects]]
             root = Node([], [output], [command], deps=objects, descr="AR", color="light-red")
         else:
             output = target.output or f"{B}/{target.name}"
