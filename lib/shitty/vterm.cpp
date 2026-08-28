@@ -477,6 +477,7 @@ namespace {
         void consume() override;
         VtermState state() const override;
         VtermSnapshot snapshot() const override;
+        VtermThemeOverrides themeOverrides() const override;
         bool snapshotCell(i32 logicalRow, u16 column, VtermSnapshotCell& result) const override;
         TestApi* createTestApi();
 
