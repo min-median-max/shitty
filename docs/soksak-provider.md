@@ -3,9 +3,14 @@
 The `soksak-provider-13` branch extends source release 13 with a headless provider ABI. Soksak
 components pin an exact commit from this branch; they do not use a workspace path.
 
-`VtermSnapshot` and `SoksakShittySnapshot` expose the terminal model's cursor shape and blink state.
-The C ABI retains hidden, filled block, hollow block, underline, and bar as explicit values. A
-consumer keeps DECTCEM visibility separate and does not parse the input stream again.
+`VtermSnapshot` and `SoksakShittySnapshot` expose the terminal model's cursor shape, blink state,
+and 500 ms animation interval. The C ABI retains hidden, filled block, hollow block, underline, and
+bar as explicit values. A consumer keeps DECTCEM visibility separate and does not parse the input
+stream again.
+
+The headless SDK selects its portable base64 and hash implementations. Its archives have no
+ambient simdutf or xxhash link dependency. `vterm-c-sdk` links and executes the C smoke case before
+publishing the SDK tree.
 
 Darwin's system archiver uses `rcs` with `ZERO_AR_DATE=1`; GNU and LLVM archivers use `rcsD`.
 Both paths preserve deterministic archive metadata.
