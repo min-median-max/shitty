@@ -10,7 +10,7 @@
 #include <std/lib/buffer.h>
 #include <std/str/view.h>
 
-#if __has_include(<simdutf.h>)
+#if !defined(SHITTY_BASE64_PORTABLE) && __has_include(<simdutf.h>)
     #include <simdutf.h>
     #define SHITTY_BASE64_SIMDUTF 1
 #else

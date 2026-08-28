@@ -2,9 +2,9 @@
 
 #include <std/rng/split_mix_64.h>
 
-#if __has_include(<rapidhash.h>)
+#if !defined(STL_HASH_PORTABLE) && __has_include(<rapidhash.h>)
     #include <rapidhash.h>
-#elif __has_include(<xxhash.h>)
+#elif !defined(STL_HASH_PORTABLE) && __has_include(<xxhash.h>)
     #include <xxhash.h>
 #endif
 
@@ -24,9 +24,9 @@ u32 stl::shash32(const void* data, size_t len) noexcept {
 }
 
 u64 stl::shash64(const void* data, size_t len) noexcept {
-#if __has_include(<rapidhash.h>)
+#if !defined(STL_HASH_PORTABLE) && __has_include(<rapidhash.h>)
     return rapidhash(data, len);
-#elif __has_include(<xxhash.h>)
+#elif !defined(STL_HASH_PORTABLE) && __has_include(<xxhash.h>)
     return XXH3_64bits(data, len);
 #else
     u64 h = 14695981039346656037ull;

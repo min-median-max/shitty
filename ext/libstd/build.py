@@ -18,7 +18,12 @@ unit_sources = [source for source in std_sources if source.endswith("_ut.cpp")]
 library_sources = [source for source in std_sources if not source.endswith("_ut.cpp")]
 
 external_monotonic_clock = "-DSTL_EXTERNAL_MONOTONIC_NOW_US=1" in build.cppflags
-libstd_name = "libstd_external_clock" if external_monotonic_clock else "libstd"
+portable_hash = "-DSTL_HASH_PORTABLE=1" in build.cppflags
+libstd_name = "libstd"
+if external_monotonic_clock:
+    libstd_name = "libstd_external_clock"
+elif portable_hash:
+    libstd_name = "libstd_vterm"
 
 libstd = library(
     name=libstd_name,

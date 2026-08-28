@@ -237,6 +237,12 @@ if not have_header("rapidhash.h") and have_header("xxhash.h"):
 
 libstd = import_build(std_build, "libstd.a", extra_cflags=embedded_path_flags)
 libstd.ldflags += libstd_backends
+libstd_vterm = import_build(
+    std_build,
+    "libstd_vterm.a",
+    extra_cflags=embedded_path_flags,
+    extra_cppflags=["-DSTL_HASH_PORTABLE=1"],
+)
 libstd_external_clock = import_build(
     std_build,
     "libstd_external_clock.a",
@@ -803,7 +809,8 @@ libshitty_vt = library(
     name="libshitty_vt",
     srcs=libshitty_vt_sources,
     cxxflags=production_path_flags,
-    deps=[plt_headless, threads, libstd],
+    cppflags=["-DSHITTY_BASE64_PORTABLE=1"],
+    deps=[plt_headless, threads, libstd_vterm],
     output="$(B)/libshitty_vt.a",
 )
 
@@ -3720,27 +3727,49 @@ group("install", st, pt)
 group("vterm-c", vterm_c_smoke)
 
 vterm_c_sdk = command(
-    inputs=["$(S)/lib/shitty/vterm_c.h"],
+    inputs=[
+        "$(S)/lib/shitty/vterm_c.h",
+        "$(S)/tst/vterm_c_smoke.c",
+    ],
     outputs=[
         "$(B)/vterm-c/lib/libshitty_vt.a",
         "$(B)/vterm-c/lib/libplt_headless.a",
         "$(B)/vterm-c/lib/libstd.a",
         "$(B)/vterm-c/include/vterm_c.h",
     ],
-    deps=[libshitty_vt, plt_headless, libstd],
+    deps=[libshitty_vt, plt_headless, libstd_vterm],
     cmd=[
-        "python3",
-        "-c",
-        (
-            "from pathlib import Path; import shutil; "
-            "pairs=["
-            "(r'$(B)/libshitty_vt.a',r'$(B)/vterm-c/lib/libshitty_vt.a'),"
-            "(r'$(B)/ext/plt/libplt_headless.a',r'$(B)/vterm-c/lib/libplt_headless.a'),"
-            "(r'$(B)/ext/libstd/libstd.a',r'$(B)/vterm-c/lib/libstd.a'),"
-            "(r'$(S)/lib/shitty/vterm_c.h',r'$(B)/vterm-c/include/vterm_c.h')]; "
-            "[(Path(dst).parent.mkdir(parents=True,exist_ok=True),shutil.copy2(src,dst)) "
-            "for src,dst in pairs]"
-        ),
+        [
+            cxx,
+            f"--target={build.target}",
+            "-x",
+            "c++",
+            "-I$(S)/lib/shitty",
+            "$(S)/tst/vterm_c_smoke.c",
+            "-x",
+            "none",
+            "$(B)/libshitty_vt.a",
+            "$(B)/ext/plt/libplt_headless.a",
+            "$(B)/ext/libstd/libstd_vterm.a",
+            "-pthread",
+            "-o",
+            "$(B)/vterm_c_sdk_smoke",
+        ],
+        ["$(B)/vterm_c_sdk_smoke"],
+        [
+            "python3",
+            "-c",
+            (
+                "from pathlib import Path; import shutil; "
+                "pairs=["
+                "(r'$(B)/libshitty_vt.a',r'$(B)/vterm-c/lib/libshitty_vt.a'),"
+                "(r'$(B)/ext/plt/libplt_headless.a',r'$(B)/vterm-c/lib/libplt_headless.a'),"
+                "(r'$(B)/ext/libstd/libstd_vterm.a',r'$(B)/vterm-c/lib/libstd.a'),"
+                "(r'$(S)/lib/shitty/vterm_c.h',r'$(B)/vterm-c/include/vterm_c.h')]; "
+                "[(Path(dst).parent.mkdir(parents=True,exist_ok=True),shutil.copy2(src,dst)) "
+                "for src,dst in pairs]"
+            ),
+        ],
     ],
     descr="VT",
     color="green",
