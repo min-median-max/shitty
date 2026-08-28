@@ -8,8 +8,10 @@ class ProviderCursorSnapshotTest(unittest.TestCase):
         implementation = Path("lib/shitty/vterm_c.cpp").read_text()
         self.assertIn("cursor_style", header)
         self.assertIn("cursor_blinking", header)
+        self.assertIn("cursor_blink_interval_ms", header)
         self.assertIn("state.cursorStyle", implementation)
         self.assertIn("state.cursorBlink", implementation)
+        self.assertIn("state.cursorBlinkIntervalMs", implementation)
 
 
 if __name__ == "__main__":
