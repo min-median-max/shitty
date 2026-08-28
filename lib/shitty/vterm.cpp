@@ -1013,6 +1013,7 @@ namespace {
 
         TerminalColors colors;
         Color originalPalette256[256];
+        u64 paletteOverrideMask[4]{};
         Screen* frame_pri = nullptr;
         ObjPool* framePriPool = nullptr;
         Screen* frame_alt = nullptr;
@@ -1040,6 +1041,9 @@ namespace {
         u8 sgrStackNext = 0;
         u8 sgrStackCount = 0;
         Color cursorColor;
+        bool foregroundOverride = false;
+        bool backgroundOverride = false;
+        bool cursorOverride = false;
         Color selectionFgColor;
         Color selectionBgColor;
         u8 selectionColorMask = 0;
@@ -2808,6 +2812,19 @@ VtermSnapshot VtermImpl::snapshot() const {
     return result;
 }
 
+VtermThemeOverrides VtermImpl::themeOverrides() const {
+    VtermThemeOverrides result;
+    result.foreground = colors.defaultForeground;
+    result.background = colors.defaultBackground;
+    result.cursor = cursorColor;
+    result.hasForeground = foregroundOverride;
+    result.hasBackground = backgroundOverride;
+    result.hasCursor = cursorOverride;
+    memcpy(result.palette, colors.palette, sizeof(result.palette));
+    memcpy(result.paletteMask, paletteOverrideMask, sizeof(result.paletteMask));
+    return result;
+}
+
 bool VtermImpl::snapshotCell(i32 logicalRow, u16 column, VtermSnapshotCell& result) const {
     const ScreenInfo info = cf->info();
     if (logicalRow < -(i32)(info.historyRows) || logicalRow >= info.rows || column >= info.columns) {
@@ -3483,6 +3500,9 @@ void VtermImpl::resetTerminal() {
     userPreferenceCharsetId = ((u16)('%') << 8) | '5';
     userPreferenceCharset96 = false;
     osc_RESET_PALETTE();
+    osc_RESET_DEFAULT_FOREGROUND();
+    osc_RESET_DEFAULT_BACKGROUND();
+    osc_RESET_CURSOR_COLOR();
     if (assignedDefaultColors) {
         csi_DECAC_TEXT_RESET();
     }
@@ -6601,6 +6621,7 @@ void VtermImpl::osc_PALETTE(u32 index, Color color, bool query) {
         colors.changed();
         exposeFrames();
     } else {
+        paletteOverrideMask[colorIndex >> 6] |= 1ull << (colorIndex & 63);
         applyPaletteColor(colorIndex, color);
     }
 }
@@ -6714,6 +6735,7 @@ void VtermImpl::osc_DEFAULT_FOREGROUND(Color color, bool query) {
         return writeDynamicColorResponse(10, colors.defaultForeground);
     }
     colors.defaultForeground = color;
+    foregroundOverride = true;
     if (!(selectionColorMask & 1)) {
         selectionFgColor = color;
     }
@@ -6727,6 +6749,7 @@ void VtermImpl::osc_DEFAULT_BACKGROUND(Color color, bool query) {
         return writeDynamicColorResponse(11, colors.defaultBackground);
     }
     colors.defaultBackground = color;
+    backgroundOverride = true;
     if (!(selectionColorMask & 2)) {
         selectionBgColor = color;
     }
@@ -6740,6 +6763,7 @@ void VtermImpl::osc_CURSOR_COLOR(Color color, bool query) {
         return writeDynamicColorResponse(12, cursorColor);
     }
     cursorColor = color;
+    cursorOverride = true;
     changePresentation();
 }
 
@@ -6938,6 +6962,7 @@ bool VtermImpl::pasteMimeNotification(bool primary) {
 
 void VtermImpl::osc_RESET_PALETTE() {
     memcpy(colors.palette, originalPalette256, sizeof(colors.palette));
+    memset(paletteOverrideMask, 0, sizeof(paletteOverrideMask));
     colors.changed();
     exposeFrames();
 }
@@ -6946,6 +6971,7 @@ void VtermImpl::osc_RESET_PALETTE(u32 index) {
     if (index > 255) {
         return;
     }
+    paletteOverrideMask[index >> 6] &= ~(1ull << (index & 63));
     applyPaletteColor((u16)(index), originalPalette256[index]);
 }
 
@@ -6966,6 +6992,7 @@ void VtermImpl::osc_RESET_SPECIAL_COLOR(u32 index) {
 
 void VtermImpl::osc_RESET_DEFAULT_FOREGROUND() {
     colors.defaultForeground = composer.opts->fg;
+    foregroundOverride = false;
     colors.changed();
     defaultFgPalIx = -1;
     exposeFrames();
@@ -6973,6 +7000,7 @@ void VtermImpl::osc_RESET_DEFAULT_FOREGROUND() {
 
 void VtermImpl::osc_RESET_DEFAULT_BACKGROUND() {
     colors.defaultBackground = composer.opts->bg;
+    backgroundOverride = false;
     colors.changed();
     defaultBgPalIx = -1;
     exposeFrames();
@@ -6980,6 +7008,7 @@ void VtermImpl::osc_RESET_DEFAULT_BACKGROUND() {
 
 void VtermImpl::osc_RESET_CURSOR_COLOR() {
     cursorColor = composer.opts->cr;
+    cursorOverride = false;
     changePresentation();
 }
 

@@ -44,6 +44,17 @@ typedef struct {
     uint8_t cursor_blinking;
 } SoksakShittySnapshot;
 
+typedef struct {
+    SoksakShittyColor foreground;
+    SoksakShittyColor background;
+    SoksakShittyColor cursor;
+    SoksakShittyColor palette[256];
+    uint64_t palette_override_mask[4];
+    uint8_t foreground_overridden;
+    uint8_t background_overridden;
+    uint8_t cursor_overridden;
+} SoksakShittyThemeOverrides;
+
 enum {
     SOKSAK_SHITTY_CURSOR_HIDDEN = 0,
     SOKSAK_SHITTY_CURSOR_BLOCK = 1,
@@ -98,6 +109,8 @@ SoksakShittyResult soksak_shitty_terminal_resize(
     SoksakShittyTerminal* terminal, uint16_t columns, uint16_t rows);
 SoksakShittyResult soksak_shitty_terminal_snapshot(
     const SoksakShittyTerminal* terminal, SoksakShittySnapshot* snapshot);
+SoksakShittyResult soksak_shitty_terminal_theme_overrides(
+    const SoksakShittyTerminal* terminal, SoksakShittyThemeOverrides* overrides);
 SoksakShittyResult soksak_shitty_terminal_cell(
     const SoksakShittyTerminal* terminal, int32_t logical_row, uint16_t column,
     SoksakShittyCell* cell, uint32_t* codepoints, size_t capacity, size_t* required);

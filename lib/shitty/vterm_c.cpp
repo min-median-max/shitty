@@ -10,6 +10,7 @@
 
 #include <new>
 #include <memory>
+#include <cstring>
 
 using namespace stl;
 
@@ -34,6 +35,10 @@ namespace {
             default:
                 return {SOKSAK_SHITTY_COLOR_DEFAULT, 0, 0, 0};
         }
+    }
+
+    SoksakShittyColor color(Color value) {
+        return {SOKSAK_SHITTY_COLOR_RGB, value.red, value.green, value.blue};
     }
 
     uint32_t modes(const VtermSnapshot& state) {
@@ -124,6 +129,23 @@ SoksakShittyResult soksak_shitty_terminal_snapshot(
         state.columns, state.rows,
         state.cursorX, state.cursorY, (uint8_t)(state.cursorStyle), (uint8_t)(state.cursorBlink),
     };
+    return SOKSAK_SHITTY_SUCCESS;
+}
+
+SoksakShittyResult soksak_shitty_terminal_theme_overrides(
+    const SoksakShittyTerminal* terminal, SoksakShittyThemeOverrides* overrides) {
+    if (terminal == nullptr || overrides == nullptr) return SOKSAK_SHITTY_INVALID_VALUE;
+    const VtermThemeOverrides state = terminal->headless->terminal()->themeOverrides();
+    overrides->foreground = color(state.foreground);
+    overrides->background = color(state.background);
+    overrides->cursor = color(state.cursor);
+    for (size_t index = 0; index < 256; ++index) {
+        overrides->palette[index] = color(state.palette[index]);
+    }
+    memcpy(overrides->palette_override_mask, state.paletteMask, sizeof(state.paletteMask));
+    overrides->foreground_overridden = state.hasForeground;
+    overrides->background_overridden = state.hasBackground;
+    overrides->cursor_overridden = state.hasCursor;
     return SOKSAK_SHITTY_SUCCESS;
 }
 

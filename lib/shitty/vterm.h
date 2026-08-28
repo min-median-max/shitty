@@ -104,6 +104,17 @@ struct VtermState {
     bool synchronizedOutput = false;
 };
 
+struct VtermThemeOverrides {
+    Color foreground{};
+    Color background{};
+    Color cursor{};
+    Color palette[256]{};
+    u64 paletteMask[4]{};
+    bool hasForeground = false;
+    bool hasBackground = false;
+    bool hasCursor = false;
+};
+
 struct VtermSnapshot {
     u32 historyRows = 0;
     u16 columns = 0;
@@ -228,6 +239,7 @@ struct Vterm {
     virtual void consume() = 0;
     virtual VtermState state() const = 0;
     virtual VtermSnapshot snapshot() const = 0;
+    virtual VtermThemeOverrides themeOverrides() const = 0;
     virtual bool snapshotCell(i32 logicalRow, u16 column, VtermSnapshotCell& result) const = 0;
 
     // The window geometry changed: adopt the composer's grid and redraw.
