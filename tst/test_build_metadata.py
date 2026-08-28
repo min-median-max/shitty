@@ -147,7 +147,8 @@ class BuildMetadataTests(unittest.TestCase):
         primary = (ROOT / "build.py").read_text()
         self.assertIn('W = "$(W)"', runner)
         self.assertIn('.replace(W, str(work))', runner)
-        self.assertIn('"rcsD"', runner)
+        self.assertIn('archive_flags = "rcs" if sys.platform == "darwin" else "rcsD"', runner)
+        self.assertIn('os.environ.setdefault("ZERO_AR_DATE", "1")', runner)
         self.assertEqual(primary.count('"-ffile-prefix-map=$(W)=."'), 2)
 
     def test_header_probe_uses_target_compiler_and_current_flags(self):
