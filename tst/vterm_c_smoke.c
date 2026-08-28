@@ -11,6 +11,10 @@ int main(void) {
     assert(soksak_shitty_terminal_snapshot(terminal, &snapshot) == SOKSAK_SHITTY_SUCCESS);
     assert(snapshot.columns == 12 && snapshot.rows == 3);
     assert((snapshot.modes & SOKSAK_SHITTY_MODE_APPLICATION_CURSOR) != 0);
+    const uint8_t cursor[] = {0x1b, '[', '6', ' ', 'q'};
+    assert(soksak_shitty_terminal_feed(terminal, cursor, sizeof(cursor)) == SOKSAK_SHITTY_SUCCESS);
+    assert(soksak_shitty_terminal_snapshot(terminal, &snapshot) == SOKSAK_SHITTY_SUCCESS);
+    assert(snapshot.cursor_style == SOKSAK_SHITTY_CURSOR_BAR && snapshot.cursor_blinking == 0);
     SoksakShittyCell cell;
     uint32_t codepoint = 0;
     size_t required = 0;

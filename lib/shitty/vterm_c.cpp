@@ -121,7 +121,7 @@ SoksakShittyResult soksak_shitty_terminal_snapshot(
     const VtermSnapshot state = terminal->headless->terminal()->snapshot();
     *snapshot = {
         state.historyRows, terminal->replies->writes, modes(state), state.columns, state.rows,
-        state.cursorX, state.cursorY,
+        state.cursorX, state.cursorY, (uint8_t)(state.cursorStyle), (uint8_t)(state.cursorBlink),
     };
     return SOKSAK_SHITTY_SUCCESS;
 }

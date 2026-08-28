@@ -39,7 +39,17 @@ typedef struct {
     uint16_t rows;
     uint16_t cursor_x;
     uint16_t cursor_y;
+    uint8_t cursor_style;
+    uint8_t cursor_blinking;
 } SoksakShittySnapshot;
+
+enum {
+    SOKSAK_SHITTY_CURSOR_HIDDEN = 0,
+    SOKSAK_SHITTY_CURSOR_BLOCK = 1,
+    SOKSAK_SHITTY_CURSOR_HOLLOW_BLOCK = 2,
+    SOKSAK_SHITTY_CURSOR_UNDERLINE = 3,
+    SOKSAK_SHITTY_CURSOR_BAR = 4,
+};
 
 typedef struct {
     SoksakShittyColor foreground;

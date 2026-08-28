@@ -2786,6 +2786,8 @@ VtermSnapshot VtermImpl::snapshot() const {
     result.rows = info.rows;
     result.cursorX = posX;
     result.cursorY = posY;
+    result.cursorStyle = cursorShape;
+    result.cursorBlink = cursorBlinkMode;
     result.bracketedPaste = bracketedPasteMode;
     result.applicationCursor = cursorKeyMode == CursorKeyMode::Application;
     result.applicationKeypad = keypadMode == KeypadMode::Application;
