@@ -73,6 +73,12 @@ typedef struct {
     uint8_t line_attribute;
 } SoksakShittyCell;
 
+typedef enum {
+    SOKSAK_SHITTY_POINTER_PRESS = 0,
+    SOKSAK_SHITTY_POINTER_RELEASE = 1,
+    SOKSAK_SHITTY_POINTER_MOTION = 2,
+} SoksakShittyPointerEvent;
+
 enum {
     SOKSAK_SHITTY_MODE_BRACKETED_PASTE = 1u << 0,
     SOKSAK_SHITTY_MODE_APPLICATION_CURSOR = 1u << 1,
@@ -111,6 +117,10 @@ SoksakShittyResult soksak_shitty_terminal_snapshot(
     const SoksakShittyTerminal* terminal, SoksakShittySnapshot* snapshot);
 SoksakShittyResult soksak_shitty_terminal_theme_overrides(
     const SoksakShittyTerminal* terminal, SoksakShittyThemeOverrides* overrides);
+SoksakShittyResult soksak_shitty_terminal_pointer(
+    const SoksakShittyTerminal* terminal, uint16_t column, uint16_t row,
+    SoksakShittyPointerEvent event, int32_t button, uint32_t modifiers,
+    uint8_t* output, size_t capacity, size_t* required);
 SoksakShittyResult soksak_shitty_terminal_cell(
     const SoksakShittyTerminal* terminal, int32_t logical_row, uint16_t column,
     SoksakShittyCell* cell, uint32_t* codepoints, size_t capacity, size_t* required);

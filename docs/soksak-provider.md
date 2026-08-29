@@ -8,6 +8,10 @@ and 500 ms animation interval. The C ABI retains hidden, filled block, hollow bl
 bar as explicit values. A consumer keeps DECTCEM visibility separate and does not parse the input
 stream again.
 
+`soksak_shitty_terminal_pointer` routes normalized cell, event, button, and modifier facts through
+the existing `encodeMouseProtocol` implementation using the live terminal's `mouseEncoding` state.
+Consumers do not copy Shitty's X10, UTF-8, SGR, URXVT, or motion encoding rules.
+
 The headless SDK selects its portable base64 and hash implementations. Its archives have no
 ambient simdutf or xxhash link dependency. `vterm-c-sdk` links and executes the C smoke case before
 publishing the SDK tree.
@@ -19,6 +23,7 @@ The source checks are:
 
 ```sh
 python3 -m unittest tst.test_provider_cursor_snapshot
+python3 -m unittest tst.test_provider_pointer
 python3 -m unittest tst.test_build_metadata.BuildMetadataTests.test_static_sdk_bytes_exclude_node_work_paths_and_archive_metadata
 ```
 

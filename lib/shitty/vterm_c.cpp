@@ -2,14 +2,18 @@
 #include "vterm_c.h"
 
 #include "composer.h"
+#include "mouse_protocol.h"
 #include "vterm.h"
 #include "vterm_headless.h"
 
 #include <std/ios/output.h>
 #include <std/mem/obj_pool.h>
+#include <std/str/builder.h>
+#include <std/str/view.h>
 
 #include <new>
 #include <memory>
+#include <cstring>
 #include <cstring>
 
 using namespace stl;
@@ -147,6 +151,39 @@ SoksakShittyResult soksak_shitty_terminal_theme_overrides(
     overrides->background_overridden = state.hasBackground;
     overrides->cursor_overridden = state.hasCursor;
     return SOKSAK_SHITTY_SUCCESS;
+}
+
+SoksakShittyResult soksak_shitty_terminal_pointer(
+    const SoksakShittyTerminal* terminal, uint16_t column, uint16_t row,
+    SoksakShittyPointerEvent event, int32_t button, uint32_t modifiers,
+    uint8_t* output, size_t capacity, size_t* required) {
+    if (terminal == nullptr || required == nullptr || (output == nullptr && capacity != 0)) {
+        return SOKSAK_SHITTY_INVALID_VALUE;
+    }
+    MouseEventType type;
+    switch (event) {
+        case SOKSAK_SHITTY_POINTER_PRESS: type = MouseEventType::Press; break;
+        case SOKSAK_SHITTY_POINTER_RELEASE: type = MouseEventType::Release; break;
+        case SOKSAK_SHITTY_POINTER_MOTION: type = MouseEventType::Motion; break;
+        default: return SOKSAK_SHITTY_INVALID_VALUE;
+    }
+    try {
+        const VtermSnapshot state = terminal->headless->terminal()->snapshot();
+        StringBuilder encoded;
+        const int motionButton = type == MouseEventType::Motion ? button : 0;
+        if (!encodeMouseProtocol(
+                encoded, state.mouseEncoding, type, modifiers, motionButton, button,
+                (int)column + 1, (int)row + 1)) {
+            return SOKSAK_SHITTY_INVALID_VALUE;
+        }
+        const StringView bytes(encoded);
+        *required = bytes.length();
+        if (capacity < bytes.length()) return SOKSAK_SHITTY_OUT_OF_SPACE;
+        if (!bytes.empty()) memcpy(output, bytes.data(), bytes.length());
+        return SOKSAK_SHITTY_SUCCESS;
+    } catch (...) {
+        return SOKSAK_SHITTY_INTERNAL_ERROR;
+    }
 }
 
 SoksakShittyResult soksak_shitty_terminal_cell(
