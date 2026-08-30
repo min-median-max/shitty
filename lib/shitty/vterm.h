@@ -207,6 +207,7 @@ struct Vterm {
     virtual bool text(const plt::TextInput& input) = 0;
     virtual bool pointerMotion(const plt::PointerMotionInput& input) = 0;
     virtual bool pointerButton(const plt::PointerButtonInput& input) = 0;
+    virtual bool mouseHighlightRelease(u16 endX, u16 endY, u16 mouseX, u16 mouseY) = 0;
     virtual bool scroll(const plt::ScrollInput& input) = 0;
     virtual void focus(bool focused) = 0;
     virtual void pointerPresence(bool present) = 0;

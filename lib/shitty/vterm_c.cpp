@@ -15,17 +15,42 @@
 #include <memory>
 #include <cstring>
 #include <cstring>
+#include <vector>
 
 using namespace stl;
 
 namespace {
     struct ReplyCounter final: Output {
-        size_t writeImpl(const void*, size_t length) override {
-            ++writes;
+        size_t writeImpl(const void* data, size_t length) override {
+            if (capturing) {
+                if (length != 0) {
+                    const uint8_t* const begin = static_cast<const uint8_t*>(data);
+                    captured.insert(captured.end(), begin, begin + length);
+                }
+            } else {
+                ++writes;
+            }
             return length;
         }
 
+        void beginCapture() {
+            captured.clear();
+            capturing = true;
+        }
+
+        const std::vector<uint8_t>& endCapture() {
+            capturing = false;
+            return captured;
+        }
+
+        void cancelCapture() {
+            capturing = false;
+            captured.clear();
+        }
+
         uint32_t writes = 0;
+        bool capturing = false;
+        std::vector<uint8_t> captured;
     };
 
     SoksakShittyColor color(CellColor value) {
@@ -80,6 +105,13 @@ struct SoksakShittyTerminal {
     Composer* composer = nullptr;
     ReplyCounter* replies = nullptr;
     VtermHeadless* headless = nullptr;
+    bool pointerPending = false;
+    uint16_t pointerColumn = 0;
+    uint16_t pointerRow = 0;
+    SoksakShittyPointerEvent pointerEvent = SOKSAK_SHITTY_POINTER_PRESS;
+    int32_t pointerButton = 0;
+    uint32_t pointerModifiers = 0;
+    std::vector<uint8_t> pointerOutput;
 };
 
 SoksakShittyResult soksak_shitty_terminal_new(
@@ -156,7 +188,7 @@ SoksakShittyResult soksak_shitty_terminal_theme_overrides(
 }
 
 SoksakShittyResult soksak_shitty_terminal_pointer(
-    const SoksakShittyTerminal* terminal, uint16_t column, uint16_t row,
+    SoksakShittyTerminal* terminal, uint16_t column, uint16_t row,
     SoksakShittyPointerEvent event, int32_t button, uint32_t modifiers,
     uint8_t* output, size_t capacity, size_t* required) {
     if (terminal == nullptr || required == nullptr || (output == nullptr && capacity != 0)) {
@@ -169,8 +201,47 @@ SoksakShittyResult soksak_shitty_terminal_pointer(
         case SOKSAK_SHITTY_POINTER_MOTION: type = MouseEventType::Motion; break;
         default: return SOKSAK_SHITTY_INVALID_VALUE;
     }
+    const auto deliverPending = [&]() {
+        *required = terminal->pointerOutput.size();
+        if (capacity < terminal->pointerOutput.size()) return SOKSAK_SHITTY_OUT_OF_SPACE;
+        if (!terminal->pointerOutput.empty()) {
+            memcpy(output, terminal->pointerOutput.data(), terminal->pointerOutput.size());
+        }
+        terminal->pointerPending = false;
+        terminal->pointerOutput.clear();
+        return SOKSAK_SHITTY_SUCCESS;
+    };
+    if (terminal->pointerPending) {
+        if (terminal->pointerColumn == column && terminal->pointerRow == row &&
+            terminal->pointerEvent == event && terminal->pointerButton == button &&
+            terminal->pointerModifiers == modifiers) {
+            return deliverPending();
+        }
+        terminal->pointerPending = false;
+        terminal->pointerOutput.clear();
+    }
     try {
         const VtermSnapshot state = terminal->headless->terminal()->snapshot();
+        if (state.mouseMode == MouseTrackingMode::VT200_Highlight &&
+            type == MouseEventType::Release) {
+            terminal->replies->beginCapture();
+            const bool released = terminal->headless->terminal()->mouseHighlightRelease(
+                (uint16_t)(column + 1), (uint16_t)(row + 1),
+                (uint16_t)(column + 1), (uint16_t)(row + 1));
+            const std::vector<uint8_t>& captured = terminal->replies->endCapture();
+            if (!released) {
+                *required = 0;
+                return SOKSAK_SHITTY_NO_VALUE;
+            }
+            terminal->pointerPending = true;
+            terminal->pointerColumn = column;
+            terminal->pointerRow = row;
+            terminal->pointerEvent = event;
+            terminal->pointerButton = button;
+            terminal->pointerModifiers = modifiers;
+            terminal->pointerOutput.assign(captured.begin(), captured.end());
+            return deliverPending();
+        }
         StringBuilder encoded;
         const int motionButton = type == MouseEventType::Motion ? button : 0;
         const uint32_t liveModifiers =
@@ -186,6 +257,9 @@ SoksakShittyResult soksak_shitty_terminal_pointer(
         if (!bytes.empty()) memcpy(output, bytes.data(), bytes.length());
         return SOKSAK_SHITTY_SUCCESS;
     } catch (...) {
+        terminal->replies->cancelCapture();
+        terminal->pointerPending = false;
+        terminal->pointerOutput.clear();
         return SOKSAK_SHITTY_INTERNAL_ERROR;
     }
 }

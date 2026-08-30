@@ -134,7 +134,7 @@ SoksakShittyResult soksak_shitty_terminal_snapshot(
 SoksakShittyResult soksak_shitty_terminal_theme_overrides(
     const SoksakShittyTerminal* terminal, SoksakShittyThemeOverrides* overrides);
 SoksakShittyResult soksak_shitty_terminal_pointer(
-    const SoksakShittyTerminal* terminal, uint16_t column, uint16_t row,
+    SoksakShittyTerminal* terminal, uint16_t column, uint16_t row,
     SoksakShittyPointerEvent event, int32_t button, uint32_t modifiers,
     uint8_t* output, size_t capacity, size_t* required);
 SoksakShittyResult soksak_shitty_terminal_cell(

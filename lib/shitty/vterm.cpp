@@ -447,7 +447,7 @@ namespace {
         void sendBytes(StringView bytes, bool userInput) override;
         void kittyKey(InputKey key, u16 modifiers, VtermKeyEventType event);
         void kittyKey(u32 key, u32 shiftedKey, u32 baseLayoutKey, u16 modifiers, VtermKeyEventType event);
-        bool mouseHighlightRelease(u16 endX, u16 endY, u16 mouseX, u16 mouseY);
+        bool mouseHighlightRelease(u16 endX, u16 endY, u16 mouseX, u16 mouseY) override;
         void locatorPosition(u16 column, u16 row, u16 pixelX, u16 pixelY, u8 buttons);
         void locatorButton(u8 button, bool pressed);
         void scrollUp(u16 count);
