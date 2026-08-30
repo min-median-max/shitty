@@ -100,6 +100,14 @@ struct VtermTextResult {
     bool status = false;
 };
 
+enum class VtermSelectionKind : u8 {
+    Cell = 0,
+    Word,
+    Line,
+    Block,
+    Extend,
+};
+
 struct VtermState {
     bool synchronizedOutput = false;
 };
@@ -211,6 +219,11 @@ struct Vterm {
     // goes to the shell rather than clearing here, so the shell's own
     // idea of a clear - prompt redraw and all - is what happens.
     virtual void clear() = 0;
+    virtual bool selectionStartCell(i32 logicalRow, u16 column, bool right, VtermSelectionKind kind) = 0;
+    virtual bool selectionUpdateCell(i32 logicalRow, u16 column, bool right) = 0;
+    virtual VtermTextResult selectionText() = 0;
+    virtual bool selectionRange(i32 logicalRow, u16& start, u16& end) const = 0;
+    virtual void selectionClear() = 0;
     virtual void feedPty(stl::StringView bytes) = 0;
     // One batch, one round of cursor and presentation bookkeeping: the
     // pty drain hands over whole blocks, and paying the per-feed wrap

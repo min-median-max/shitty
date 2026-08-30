@@ -218,3 +218,76 @@ SoksakShittyResult soksak_shitty_terminal_cell(
     }
     return SOKSAK_SHITTY_SUCCESS;
 }
+
+SoksakShittyResult soksak_shitty_terminal_selection_start(
+    SoksakShittyTerminal* terminal, uint16_t column, int32_t logical_row,
+    SoksakShittySelectionSide side, SoksakShittySelectionKind kind) {
+    if (terminal == nullptr || side < SOKSAK_SHITTY_SELECTION_LEFT || side > SOKSAK_SHITTY_SELECTION_RIGHT ||
+        kind < SOKSAK_SHITTY_SELECTION_CELL || kind > SOKSAK_SHITTY_SELECTION_EXTEND) {
+        return SOKSAK_SHITTY_INVALID_VALUE;
+    }
+    try {
+        return terminal->headless->terminal()->selectionStartCell(
+                   logical_row, column, side == SOKSAK_SHITTY_SELECTION_RIGHT,
+                   static_cast<VtermSelectionKind>(kind))
+            ? SOKSAK_SHITTY_SUCCESS : SOKSAK_SHITTY_INVALID_VALUE;
+    } catch (...) {
+        return SOKSAK_SHITTY_INTERNAL_ERROR;
+    }
+}
+
+SoksakShittyResult soksak_shitty_terminal_selection_update(
+    SoksakShittyTerminal* terminal, uint16_t column, int32_t logical_row,
+    SoksakShittySelectionSide side) {
+    if (terminal == nullptr || side < SOKSAK_SHITTY_SELECTION_LEFT || side > SOKSAK_SHITTY_SELECTION_RIGHT) {
+        return SOKSAK_SHITTY_INVALID_VALUE;
+    }
+    try {
+        return terminal->headless->terminal()->selectionUpdateCell(
+                   logical_row, column, side == SOKSAK_SHITTY_SELECTION_RIGHT)
+            ? SOKSAK_SHITTY_SUCCESS : SOKSAK_SHITTY_INVALID_VALUE;
+    } catch (...) {
+        return SOKSAK_SHITTY_INTERNAL_ERROR;
+    }
+}
+
+SoksakShittyResult soksak_shitty_terminal_selection_clear(SoksakShittyTerminal* terminal) {
+    if (terminal == nullptr) return SOKSAK_SHITTY_INVALID_VALUE;
+    try {
+        terminal->headless->terminal()->selectionClear();
+        return SOKSAK_SHITTY_SUCCESS;
+    } catch (...) {
+        return SOKSAK_SHITTY_INTERNAL_ERROR;
+    }
+}
+
+SoksakShittyResult soksak_shitty_terminal_selection_text(
+    SoksakShittyTerminal* terminal, uint8_t* output, size_t capacity, size_t* required) {
+    if (terminal == nullptr || required == nullptr || (output == nullptr && capacity != 0)) {
+        return SOKSAK_SHITTY_INVALID_VALUE;
+    }
+    try {
+        const VtermTextResult selected = terminal->headless->terminal()->selectionText();
+        if (!selected.status) {
+            *required = 0;
+            return SOKSAK_SHITTY_NO_VALUE;
+        }
+        *required = selected.text.length();
+        if (capacity < selected.text.length()) return SOKSAK_SHITTY_OUT_OF_SPACE;
+        if (!selected.text.empty()) memcpy(output, selected.text.data(), selected.text.length());
+        return SOKSAK_SHITTY_SUCCESS;
+    } catch (...) {
+        return SOKSAK_SHITTY_INTERNAL_ERROR;
+    }
+}
+
+SoksakShittyResult soksak_shitty_terminal_selection_range(
+    const SoksakShittyTerminal* terminal, int32_t logical_row, uint16_t* start, uint16_t* end) {
+    if (terminal == nullptr || start == nullptr || end == nullptr) return SOKSAK_SHITTY_INVALID_VALUE;
+    try {
+        return terminal->headless->terminal()->selectionRange(logical_row, *start, *end)
+            ? SOKSAK_SHITTY_SUCCESS : SOKSAK_SHITTY_NO_VALUE;
+    } catch (...) {
+        return SOKSAK_SHITTY_INTERNAL_ERROR;
+    }
+}

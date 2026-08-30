@@ -459,7 +459,11 @@ namespace {
         void selectionUpdate(int pixelX, int pixelY);
         VtermTextResult selectionFinish();
         bool hasSelection() const;
-        void selectionClear();
+        bool selectionStartCell(i32 logicalRow, u16 column, bool right, VtermSelectionKind kind) override;
+        bool selectionUpdateCell(i32 logicalRow, u16 column, bool right) override;
+        VtermTextResult selectionText() override;
+        bool selectionRange(i32 logicalRow, u16& start, u16& end) const override;
+        void selectionClear() override;
         void selectionRectangular();
         void paste(StringView text);
         bool pasteMimeNotification(bool primary);
@@ -551,6 +555,7 @@ namespace {
         void selectStart(int pX, int pY, bool cycleSnapTo);
         void selectExtend(int pX, int pY, bool cycleSnapTo);
         void selectUpdate(int pX, int pY);
+        void selectUpdate(Point point);
         bool selectFinish(Buffer& utf8_selection);
         void selectClear();
         void selectRectangularModeToggle();
@@ -2429,6 +2434,66 @@ void VtermImpl::selectionClear() {
 
 void VtermImpl::selectionRectangular() {
     selectRectangularModeToggle();
+}
+
+bool VtermImpl::selectionStartCell(i32 logicalRow, u16 column, bool right, VtermSelectionKind kind) {
+    const ScreenInfo screen = cf->info();
+    if (logicalRow < -(i32)(screen.historyRows) || logicalRow >= screen.rows || column > screen.columns) {
+        return false;
+    }
+    const Point point(min<int>((int)(column) + (right ? 1 : 0), screen.columns), logicalRow);
+    if (kind == VtermSelectionKind::Extend) {
+        if (!cf->hasSelection()) {
+            return false;
+        }
+        const Rect selected = cf->currentSelection();
+        if (selected.rectangular) {
+            selectUpdatesLeft = point.x < selected.mid().x;
+            selectUpdatesTop = point.y < selected.mid().y;
+        } else {
+            selectUpdatesLeft = selectUpdatesTop = point < selected.mid();
+        }
+        selectPivotFixed = true;
+        selectUpdate(point);
+        return true;
+    }
+
+    cf->beginSelection(point);
+    selectUpdatesTop = false;
+    selectUpdatesLeft = false;
+    selectPivotFixed = true;
+    if (kind == VtermSelectionKind::Word || kind == VtermSelectionKind::Line) {
+        cf->cycleSelectionSnap();
+    }
+    if (kind == VtermSelectionKind::Line) {
+        cf->cycleSelectionSnap();
+    }
+    if (kind == VtermSelectionKind::Block) {
+        Rect selected = cf->currentSelection();
+        selected.toggleRectangular();
+        cf->updateSelection(selected);
+    }
+    changePresentation();
+    hideCursor();
+    redraw();
+    return true;
+}
+
+bool VtermImpl::selectionUpdateCell(i32 logicalRow, u16 column, bool right) {
+    const ScreenInfo screen = cf->info();
+    if (logicalRow < -(i32)(screen.historyRows) || logicalRow >= screen.rows || column > screen.columns) {
+        return false;
+    }
+    selectUpdate(Point(min<int>((int)(column) + (right ? 1 : 0), screen.columns), logicalRow));
+    return true;
+}
+
+VtermTextResult VtermImpl::selectionText() {
+    return selectionFinish();
+}
+
+bool VtermImpl::selectionRange(i32 logicalRow, u16& start, u16& end) const {
+    return cf->selectionRange(logicalRow, start, end);
 }
 
 void VtermImpl::paste(StringView text) {
@@ -9776,7 +9841,10 @@ void VtermImpl::selectExtend(int pX, int pY, bool cycleSnapTo) {
 }
 
 void VtermImpl::selectUpdate(int pX, int pY) {
-    Point pt = selectionPoint(pX, pY);
+    selectUpdate(selectionPoint(pX, pY));
+}
+
+void VtermImpl::selectUpdate(Point pt) {
 
     Rect selection = cf->currentSelection();
 

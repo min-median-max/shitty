@@ -289,6 +289,7 @@ namespace {
         void cycleSelectionSnap() override;
         void clearSelection() override;
         bool selectedText(Buffer& text) const override;
+        bool selectionRange(i32 logicalRow, u16& start, u16& end) const override;
         Point logicalPoint(Point point) const override;
 
         Coord nCols = 0;
@@ -2586,6 +2587,35 @@ bool ScreenBase<Traits>::selectedText(Buffer& utf8_selection) const {
         utf8_selection.seekNegative(1);
     }
 
+    return true;
+}
+
+template <typename Traits>
+bool ScreenBase<Traits>::selectionRange(i32 logicalRow, u16& start, u16& end) const {
+    Rect selected = snappedSelection();
+    if (selected.empty()) {
+        return false;
+    }
+    selected.tl.y -= viewOffset;
+    selected.br.y -= viewOffset;
+    if (logicalRow < selected.tl.y || logicalRow > selected.br.y) {
+        return false;
+    }
+    u16 begin = 0;
+    u16 limit = nCols;
+    if (selected.rectangular || selected.tl.y == selected.br.y) {
+        begin = selected.tl.x;
+        limit = selected.br.x;
+    } else if (logicalRow == selected.tl.y) {
+        begin = selected.tl.x;
+    } else if (logicalRow == selected.br.y) {
+        limit = selected.br.x;
+    }
+    if (begin >= limit) {
+        return false;
+    }
+    start = begin;
+    end = limit - 1;
     return true;
 }
 

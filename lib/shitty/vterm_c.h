@@ -16,6 +16,7 @@ typedef enum {
     SOKSAK_SHITTY_INVALID_VALUE = -1,
     SOKSAK_SHITTY_OUT_OF_SPACE = -2,
     SOKSAK_SHITTY_INTERNAL_ERROR = -3,
+    SOKSAK_SHITTY_NO_VALUE = 1,
 } SoksakShittyResult;
 
 typedef enum {
@@ -79,6 +80,19 @@ typedef enum {
     SOKSAK_SHITTY_POINTER_MOTION = 2,
 } SoksakShittyPointerEvent;
 
+typedef enum {
+    SOKSAK_SHITTY_SELECTION_LEFT = 0,
+    SOKSAK_SHITTY_SELECTION_RIGHT = 1,
+} SoksakShittySelectionSide;
+
+typedef enum {
+    SOKSAK_SHITTY_SELECTION_CELL = 0,
+    SOKSAK_SHITTY_SELECTION_WORD = 1,
+    SOKSAK_SHITTY_SELECTION_LINE = 2,
+    SOKSAK_SHITTY_SELECTION_BLOCK = 3,
+    SOKSAK_SHITTY_SELECTION_EXTEND = 4,
+} SoksakShittySelectionKind;
+
 enum {
     SOKSAK_SHITTY_MODE_BRACKETED_PASTE = 1u << 0,
     SOKSAK_SHITTY_MODE_APPLICATION_CURSOR = 1u << 1,
@@ -124,6 +138,17 @@ SoksakShittyResult soksak_shitty_terminal_pointer(
 SoksakShittyResult soksak_shitty_terminal_cell(
     const SoksakShittyTerminal* terminal, int32_t logical_row, uint16_t column,
     SoksakShittyCell* cell, uint32_t* codepoints, size_t capacity, size_t* required);
+SoksakShittyResult soksak_shitty_terminal_selection_start(
+    SoksakShittyTerminal* terminal, uint16_t column, int32_t logical_row,
+    SoksakShittySelectionSide side, SoksakShittySelectionKind kind);
+SoksakShittyResult soksak_shitty_terminal_selection_update(
+    SoksakShittyTerminal* terminal, uint16_t column, int32_t logical_row,
+    SoksakShittySelectionSide side);
+SoksakShittyResult soksak_shitty_terminal_selection_clear(SoksakShittyTerminal* terminal);
+SoksakShittyResult soksak_shitty_terminal_selection_text(
+    SoksakShittyTerminal* terminal, uint8_t* output, size_t capacity, size_t* required);
+SoksakShittyResult soksak_shitty_terminal_selection_range(
+    const SoksakShittyTerminal* terminal, int32_t logical_row, uint16_t* start, uint16_t* end);
 
 #ifdef __cplusplus
 }
