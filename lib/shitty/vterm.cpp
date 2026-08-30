@@ -2867,6 +2867,7 @@ VtermSnapshot VtermImpl::snapshot() const {
     result.mouseClick = mouseTrk.mode == MouseTrackingMode::VT200;
     result.mouseDrag = mouseTrk.mode == MouseTrackingMode::VT200_ButtonEvent;
     result.mouseMotion = mouseTrk.mode == MouseTrackingMode::VT200_AnyEvent;
+    result.mouseMode = mouseTrk.mode;
     result.mouseEncoding = mouseTrk.enc;
     result.sgrMouse = mouseTrk.enc == MouseTrackingEnc::SGR;
     result.utf8Mouse = mouseTrk.enc == MouseTrackingEnc::UTF8;

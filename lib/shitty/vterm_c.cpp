@@ -56,6 +56,8 @@ namespace {
         set(SOKSAK_SHITTY_MODE_MOUSE_CLICK, state.mouseClick);
         set(SOKSAK_SHITTY_MODE_MOUSE_DRAG, state.mouseDrag);
         set(SOKSAK_SHITTY_MODE_MOUSE_MOTION, state.mouseMotion);
+        set(SOKSAK_SHITTY_MODE_MOUSE_X10, state.mouseMode == MouseTrackingMode::X10_Compat);
+        set(SOKSAK_SHITTY_MODE_MOUSE_HIGHLIGHT, state.mouseMode == MouseTrackingMode::VT200_Highlight);
         set(SOKSAK_SHITTY_MODE_SGR_MOUSE, state.sgrMouse);
         set(SOKSAK_SHITTY_MODE_UTF8_MOUSE, state.utf8Mouse);
         set(SOKSAK_SHITTY_MODE_FOCUS_EVENTS, state.focusEvents);
@@ -171,8 +173,10 @@ SoksakShittyResult soksak_shitty_terminal_pointer(
         const VtermSnapshot state = terminal->headless->terminal()->snapshot();
         StringBuilder encoded;
         const int motionButton = type == MouseEventType::Motion ? button : 0;
+        const uint32_t liveModifiers =
+            state.mouseMode == MouseTrackingMode::X10_Compat ? 0 : modifiers;
         if (!encodeMouseProtocol(
-                encoded, state.mouseEncoding, type, modifiers, motionButton, button,
+                encoded, state.mouseEncoding, type, liveModifiers, motionButton, button,
                 (int)column + 1, (int)row + 1)) {
             return SOKSAK_SHITTY_INVALID_VALUE;
         }

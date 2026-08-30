@@ -138,6 +138,7 @@ struct VtermSnapshot {
     bool mouseClick = false;
     bool mouseDrag = false;
     bool mouseMotion = false;
+    MouseTrackingMode mouseMode = MouseTrackingMode::Disabled;
     MouseTrackingEnc mouseEncoding = MouseTrackingEnc::Default;
     bool sgrMouse = false;
     bool utf8Mouse = false;

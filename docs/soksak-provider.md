@@ -9,8 +9,10 @@ bar as explicit values. A consumer keeps DECTCEM visibility separate and does no
 stream again.
 
 `soksak_shitty_terminal_pointer` routes normalized cell, event, button, and modifier facts through
-the existing `encodeMouseProtocol` implementation using the live terminal's `mouseEncoding` state.
-Consumers do not copy Shitty's X10, UTF-8, SGR, URXVT, or motion encoding rules.
+the existing `encodeMouseProtocol` implementation using the live terminal's tracking mode and
+mouse encoding. The snapshot exposes DEC 9 X10 and DEC 1001 highlight tracking as distinct bits.
+X10 input suppresses modifiers at this provider boundary. Consumers do not copy X10, UTF-8, SGR,
+URXVT, or motion encoding rules.
 
 The headless SDK selects its portable base64 and hash implementations. Its archives have no
 ambient simdutf or xxhash link dependency. `vterm-c-sdk` links and executes the C smoke case before
