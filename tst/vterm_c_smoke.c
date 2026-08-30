@@ -3,6 +3,16 @@
 #include <assert.h>
 #include <string.h>
 
+static void assert_pointer(
+    SoksakShittyTerminal* terminal, uint32_t modifiers, const uint8_t* expected, size_t size) {
+    uint8_t output[16] = {0};
+    size_t required = 0;
+    assert(soksak_shitty_terminal_pointer(
+        terminal, 1, 2, SOKSAK_SHITTY_POINTER_PRESS, 4, modifiers,
+        output, sizeof(output), &required) == SOKSAK_SHITTY_SUCCESS);
+    assert(required == size && memcmp(output, expected, size) == 0);
+}
+
 int main(void) {
     SoksakShittyTerminal* terminal = 0;
     assert(soksak_shitty_terminal_new(12, 3, &terminal) == SOKSAK_SHITTY_SUCCESS);
@@ -41,6 +51,32 @@ int main(void) {
         selected_terminal, 0, &selection_start, &selection_end) == SOKSAK_SHITTY_SUCCESS);
     assert(selection_start == 0 && selection_end == sizeof(marker) - 2);
     soksak_shitty_terminal_free(selected_terminal);
+
+    SoksakShittyTerminal* mouse_terminal = 0;
+    assert(soksak_shitty_terminal_new(80, 24, &mouse_terminal) == SOKSAK_SHITTY_SUCCESS);
+    const uint8_t x10_mode[] = "\x1b[?9h";
+    assert(soksak_shitty_terminal_feed(
+        mouse_terminal, x10_mode, sizeof(x10_mode) - 1) == SOKSAK_SHITTY_SUCCESS);
+    assert(soksak_shitty_terminal_snapshot(mouse_terminal, &snapshot) == SOKSAK_SHITTY_SUCCESS);
+    assert((snapshot.modes & SOKSAK_SHITTY_MODE_MOUSE_X10) != 0);
+    assert((snapshot.modes & (SOKSAK_SHITTY_MODE_MOUSE_CLICK |
+        SOKSAK_SHITTY_MODE_MOUSE_HIGHLIGHT | SOKSAK_SHITTY_MODE_MOUSE_DRAG |
+        SOKSAK_SHITTY_MODE_MOUSE_MOTION)) == 0);
+    const uint8_t x10_wheel[] = {0x1b, '[', 'M', 96, 34, 35};
+    assert_pointer(mouse_terminal, 7, x10_wheel, sizeof(x10_wheel));
+
+    const uint8_t highlight_mode[] = "\x1b[?9l\x1b[?1001h";
+    assert(soksak_shitty_terminal_feed(mouse_terminal, highlight_mode,
+        sizeof(highlight_mode) - 1) == SOKSAK_SHITTY_SUCCESS);
+    assert(soksak_shitty_terminal_snapshot(mouse_terminal, &snapshot) == SOKSAK_SHITTY_SUCCESS);
+    assert((snapshot.modes & SOKSAK_SHITTY_MODE_MOUSE_HIGHLIGHT) != 0);
+    assert((snapshot.modes & (SOKSAK_SHITTY_MODE_MOUSE_X10 |
+        SOKSAK_SHITTY_MODE_MOUSE_CLICK | SOKSAK_SHITTY_MODE_MOUSE_DRAG |
+        SOKSAK_SHITTY_MODE_MOUSE_MOTION)) == 0);
+    const uint8_t highlight_wheel[] = {0x1b, '[', 'M', 124, 34, 35};
+    assert_pointer(mouse_terminal, 7, highlight_wheel, sizeof(highlight_wheel));
+    soksak_shitty_terminal_free(mouse_terminal);
+
     assert(soksak_shitty_terminal_resize(terminal, 7, 4) == SOKSAK_SHITTY_SUCCESS);
     assert(soksak_shitty_terminal_snapshot(terminal, &snapshot) == SOKSAK_SHITTY_SUCCESS);
     assert(snapshot.columns == 7 && snapshot.rows == 4);
